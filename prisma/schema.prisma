@@ -1,0 +1,47 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+
+model Bot {
+  id            String   @id @default(uuid())
+  ayacoin       Int      @default(5000)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model UserServer {
+  id        String @id @default (uuid())
+  serverId  String
+  userId    String
+  xp        Int @default (0)
+  coin      Int @default (1000)
+  ayacoin   Int @default (0)
+  bankcoin  Int @default (0)
+  createdAt DateTime @default (now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([serverId, userId])
+}
+
+model Reactionrole {
+  id            String   @id @default(uuid())
+  messageId     String   @unique
+  role          String[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Ticket {
+  id            String   @id @default(uuid())
+  messageId     String   @unique
+  categoryId    String
+  role          String[]
+  ticketnumber  Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
