@@ -1,0 +1,4 @@
+DISCORD_TOKEN = "DISCORDTOKEN"
+CLIEN_ID = "CLIENTID"
+DATABASE_URL="postgresql://username:password@localhost:5432/dbname?schema=public"
+errorLogChannelId="errorlogchannelid"
