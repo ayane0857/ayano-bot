@@ -95,7 +95,7 @@ module.exports = {
             const send = new EmbedBuilder()
                 .setColor('#4CAF50')
                 .setTitle('役職パネル')
-                .setDescription(result + '\nボタンを押すと、押した人にだけ確認メッセージが届きます。')
+                .setDescription(result + '\nボタンを押すと、確認メッセージが届きます。')
                 .setTimestamp()
             // ボタンを作成
             const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -130,7 +130,6 @@ module.exports = {
                     role: addprisma,
                 },
             });
-            // ボタン方式なのでリアクション追加は不要
         } catch (e) {
             throw e;
         } finally {
