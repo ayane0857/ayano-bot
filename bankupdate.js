@@ -2,28 +2,25 @@ const cron = require('node-cron');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 async function addCoinsToAllUsers() {
+    const MULTIPLIER = 1.2;
     try {
-        // First get all users and their current bankcoin values
         const users = await prisma.userServer.findMany({
-            select: {
-                id: true,
-                bankcoin: true
-            }
+            select: { id: true, bankcoin: true }
         });
 
-        // Update each user's coins by multiplying by 1.2
-        const updatePromises = users.map(user =>
-            prisma.userServer.update({
-                where: { id: user.id },
-                data: {
-                    bankcoin: user.bankcoin * 1.05
-                }
-            })
-        );
+        const updatePromises = users.map(({ id, bankcoin }) => {
+            const current = Number.isFinite(bankcoin) ? bankcoin : 0;
+            const safeValue = current < 0 ? 0 : current;
+            const updatedBankcoin = Number((safeValue * MULTIPLIER).toFixed(2));
+
+            return prisma.userServer.update({
+                where: { id },
+                data: { bankcoin: updatedBankcoin }
+            });
+        });
 
         const result = await prisma.$transaction(updatePromises);
         console.log(`[${new Date().toISOString()}] Updated ${result.length} users' coins!`);
-
     } catch (error) {
         console.error(`[${new Date().toISOString()}] Error updating coins:`, error);
         throw error;
