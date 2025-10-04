@@ -1,5 +1,5 @@
 const { Events, EmbedBuilder } = require('discord.js');
-const { getUserData, addXP, addCoin, levenextxp } = require('../functions.js');
+const { getUserData, addXP, addCoin, levenextxp } = require('../../functions.js');
 
 module.exports = {
     name: Events.MessageCreate,

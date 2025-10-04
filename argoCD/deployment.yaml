@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: unibot
+spec:
+  selector:
+    matchLabels:
+      app: unibot
+  template:
+    metadata:
+      labels:
+        app: unibot
+    spec:
+      containers:
+        - name: unibot
+          image: registry.uniproject.jp/unibot/unibot:4.0.0-4
+          imagePullPolicy: Always
+          envFrom:
+            - secretRef:
+                name: ayano-env
+      imagePullSecrets:
+        - name: internal-harbor

@@ -1,4 +1,4 @@
-const { Events } = require('discord.js');
+const { Events, EmbedBuilder } = require('discord.js');
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 const { setTimeout } = require('node:timers/promises');
@@ -43,10 +43,20 @@ module.exports = {
                         let sendmessage;
                         if (member.roles.cache.has(role)) {
                             await member.roles.remove(role);
-                            sendmessage = await reaction.message.channel.send(`${member.displayName} から役職 <@&${role}> を削除しました。`);
+                            const embed = new EmbedBuilder()
+                                .setColor('#4CAF50')
+                                .setTitle('役職削除')
+                                .setDescription(`${member.displayName} から役職 <@&${role}> を削除しました。`)
+                                .setTimestamp();
+                            sendmessage = await reaction.message.channel.send({ content: "", embeds: [embed] });
                         } else {
                             await member.roles.add(role);
-                            sendmessage = await reaction.message.channel.send(`${member.displayName} に役職 <@&${role}> を付与しました。`);
+                            const embed = new EmbedBuilder()
+                                .setColor('#4CAF50')
+                                .setTitle('役職追加')
+                                .setDescription(`${member.displayName} から役職 <@&${role}> を追加しました。`)
+                                .setTimestamp();
+                            sendmessage = await reaction.message.channel.send({ content: "", embeds: [embed] });
                         }
                         await reaction.users.remove(user.id);
                         await setTimeout(1000);
@@ -54,7 +64,26 @@ module.exports = {
                     }
                 }
             } catch (error) {
-                console.error('メッセージのフェッチに失敗しました:', error);
+                const channel = reaction.message.client.channels.cache.get('1335518928293593128');
+                const embed = new EmbedBuilder()
+                    .setColor('#FF0000')
+                    .setTitle('エラー')
+                    .setDescription('コマンドの実行中にエラーが発生しました')
+                    .addFields(
+                        {
+                            name: '実行者', value: `${reaction.message.author.username} (${reaction.message.author.id})`, inline: true
+                        },
+                        {
+                            name: 'サーバー', value: reaction.message.guildId ? `${reaction.message.guildId} (${reaction.message.channelId})` : 'DM', inline: true
+                        },
+                        {
+                            name: 'エラー内容', value: "```\n" + error + "\n```", inline: false
+                        }
+                    )
+                    .setTimestamp();
+                if (channel) {
+                    channel.send({ content: "", embeds: [embed] });
+                }
             }
         }
     },
