@@ -305,6 +305,25 @@ module.exports = {
                 }
             }
 
+            // キャンセルボタン処理（確認ダイアログを閉じる）
+            if (interaction.customId === 'rr-cancel') {
+                try {
+                    // defer していない可能性があるので、もし未応答なら reply、応答済みなら edit
+                    if (!interaction.replied && !interaction.deferred) {
+                        await interaction.reply({ content: 'キャンセルしました。', flags: MessageFlags.Ephemeral });
+                    } else {
+                        await interaction.editReply({ content: 'キャンセルしました。', components: [] });
+                    }
+                } catch (error) {
+                    console.error('rr-cancel 処理エラー:', error);
+                    try {
+                        if (!interaction.replied && !interaction.deferred) {
+                            await interaction.reply({ content: 'キャンセル処理中にエラーが発生しました。', flags: MessageFlags.Ephemeral });
+                        }
+                    } catch (e) { console.error(e); }
+                }
+            }
+
             if (interaction.customId && interaction.customId.startsWith('rr-confirm-')) {
                 try {
                     // このボタンはエフェメラルで送られたため、そのままreplyでOK
