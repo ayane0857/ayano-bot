@@ -9,7 +9,7 @@ async function addCoinsToAllUsers() {
         });
 
         const updatePromises = users.map(({ id, bankcoin }) => {
-            const  safeValue  =  Number.isFinite ( bankcoin ) && bankcoin >= 0 ? bankcoin : 0 ;
+            const safeValue = Number.isFinite(bankcoin) && bankcoin >= 0 ? bankcoin : 0;
             const updatedBankcoin = Number((safeValue * MULTIPLIER).toFixed(2));
 
             return prisma.userServer.update({
