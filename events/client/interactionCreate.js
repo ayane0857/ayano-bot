@@ -254,6 +254,95 @@ module.exports = {
                 }
             }
 
+            // 役職パネルのボタン処理
+            if (interaction.customId && interaction.customId.startsWith('rr-role-')) {
+                try {
+                    // 押した本人にだけ見えるように先に defer
+                    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+                    const parts = interaction.customId.split('-');
+                    const index = parseInt(parts[2], 10);
+
+                    const Roledata = await prisma.Reactionrole.findUnique({
+                        where: { messageId: String(interaction.message.id) }
+                    });
+
+                    if (!Roledata) {
+                        return await interaction.editReply({ content: 'このパネルは設定されていません。' });
+                    }
+
+                    const roleId = Roledata.role[index];
+                    if (!roleId) {
+                        return await interaction.editReply({ content: '選択された役職が見つかりませんでした。' });
+                    }
+
+                    // 確認用ボタンを表示
+                    const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+                    const confirm = new ButtonBuilder()
+                        .setCustomId(`rr-confirm-${index}-${interaction.message.id}`)
+                        .setLabel('確認して付与')
+                        .setStyle(ButtonStyle.Success);
+                    const cancel = new ButtonBuilder()
+                        .setCustomId('rr-cancel')
+                        .setLabel('キャンセル')
+                        .setStyle(ButtonStyle.Secondary);
+                    const row = new ActionRowBuilder().addComponents(confirm, cancel);
+
+                    const role = interaction.guild.roles.cache.get(roleId);
+                    await interaction.editReply({ content: `<@${interaction.user.id}> 役職「${role?.name ?? '指定されたロール'}」を付与／解除します。よければ「確認して付与」を押してください。`, components: [row] });
+
+                } catch (error) {
+                    console.error('rr-role ボタン処理エラー:', error);
+                    try {
+                        if (!interaction.replied && !interaction.deferred) {
+                            await interaction.reply({ content: 'エラーが発生しました。', flags: MessageFlags.Ephemeral });
+                        } else {
+                            await interaction.editReply({ content: 'エラーが発生しました。' });
+                        }
+                    } catch (e) {
+                        console.error('エラー応答失敗:', e);
+                    }
+                }
+            }
+
+            if (interaction.customId && interaction.customId.startsWith('rr-confirm-')) {
+                try {
+                    // このボタンはエフェメラルで送られたため、そのままreplyでOK
+                    const parts = interaction.customId.split('-');
+                    const index = parseInt(parts[2], 10);
+                    const messageId = parts.slice(3).join('-');
+
+                    const Roledata = await prisma.Reactionrole.findUnique({
+                        where: { messageId: String(messageId) }
+                    });
+
+                    if (!Roledata) {
+                        return await interaction.reply({ content: '設定が見つかりませんでした。', flags: MessageFlags.Ephemeral });
+                    }
+
+                    const roleId = Roledata.role[index];
+                    if (!roleId) return await interaction.reply({ content: '役職が見つかりませんでした。', flags: MessageFlags.Ephemeral });
+
+                    const member = interaction.guild.members.cache.get(interaction.user.id);
+                    if (!member) return await interaction.reply({ content: 'メンバー情報が取得できませんでした。', flags: MessageFlags.Ephemeral });
+
+                    const has = member.roles.cache.has(roleId);
+                    if (has) {
+                        await member.roles.remove(roleId);
+                        await interaction.reply({ content: `役職を外しました：<@&${roleId}>`, flags: MessageFlags.Ephemeral });
+                    } else {
+                        await member.roles.add(roleId);
+                        await interaction.reply({ content: `役職を付与しました：<@&${roleId}>`, flags: MessageFlags.Ephemeral });
+                    }
+
+                } catch (error) {
+                    console.error('rr-confirm 処理エラー:', error);
+                    try {
+                        await interaction.reply({ content: 'エラーが発生しました。', flags: MessageFlags.Ephemeral });
+                    } catch (e) { console.error(e); }
+                }
+            }
+
             if (interaction.customId === 'delete-ticket') {
                 try {
                     const embed = new EmbedBuilder()

@@ -95,15 +95,30 @@ module.exports = {
             const send = new EmbedBuilder()
                 .setColor('#4CAF50')
                 .setTitle('役職パネル')
-                .setDescription(result)
+                .setDescription(result + '\nボタンを押すと、確認メッセージが届きます。')
                 .setTimestamp()
+            // ボタンを作成
+            const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+            const rows = [];
+            for (let i = 0; i < addprisma.length; i++) {
+                const btn = new ButtonBuilder()
+                    .setCustomId(`rr-role-${i}`)
+                    .setLabel(`${alphabet[i]} ${interaction.guild.roles.cache.get(addprisma[i])?.name ?? 'ロール'}`)
+                    .setStyle(ButtonStyle.Primary);
+                // 1行に5ボタンまで
+                const rowIndex = Math.floor(i / 5);
+                if (!rows[rowIndex]) rows[rowIndex] = new ActionRowBuilder();
+                rows[rowIndex].addComponents(btn);
+            }
+
             let message = await interaction.channel.send({
-                embeds: [send]
+                embeds: [send],
+                components: rows
             });
             const reply = new EmbedBuilder()
                 .setColor('#4CAF50')
-                .setTitle('役職パネル作成完了')
-                .setDescription('役職パネルが作成されました。')
+                .setTitle('役職パネルを作成しました')
+                .setDescription('パネルを作成しました。ボタンで役職の付与・解除ができます。')
                 .setTimestamp()
             await interaction.reply({
                 embeds: [reply],
@@ -115,13 +130,6 @@ module.exports = {
                     role: addprisma,
                 },
             });
-            for (let i = 0; i < addprisma.length; i++) {
-                try {
-                    await message.react(alphabet[i]);
-                } catch (error) {
-                    console.error(`リアクションの追加中にエラーが発生しました: ${error}`);
-                }
-            }
         } catch (e) {
             throw e;
         } finally {
