@@ -21,6 +21,13 @@ const client = new Client({
 
 console.log("Bot Starting...");
 
+// Start bank update tasks (cron schedule + exchange simulator)
+try {
+    require(path.join(__dirname, 'bankupdate'));
+} catch (err) {
+    console.error('[ERROR] Failed to start bankupdate module:', err);
+}
+
 client.commands = new Collection();
 
 const commandsPath = path.join(__dirname, 'commands');

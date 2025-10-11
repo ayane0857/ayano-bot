@@ -13,6 +13,8 @@ module.exports = {
             if (!interaction.guildId) return;
 
             const member = interaction.options.getMember('user') || interaction.member;
+            console.log(member);
+            // const user = await message.client.users.fetch(id);
             const embed = new EmbedBuilder()
                 .setColor('#0099ff')
                 .setTitle(`${member.nickname} の情報`)

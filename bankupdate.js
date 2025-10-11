@@ -27,8 +27,6 @@ async function addCoinsToAllUsers() {
     } catch (error) {
         console.error(`[${new Date().toISOString()}] Error updating coins:`, error);
         throw error;
-    } finally {
-        await prisma.$disconnect();
     }
 }
 
@@ -53,20 +51,48 @@ class ExchangeSimulator {
 
     // データベースからレートを取得
     async getCurrentRate() {
-        const rateData = await prisma.Bot.findUnique({
-            where: { id: "singleton" },
-        });
-
-        // データが存在しない場合は初期値を作成
-        if (!rateData) {
-            const initialRate = 15000; // 初期値を10倍で保存 (例: 150.00 -> 15000)
-            await prisma.Bot.create({
-                data: { id: "singleton", ayacoin: initialRate },
+        try {
+            const rateData = await prisma.Bot.findUnique({
+                where: { id: "singleton" },
             });
-            return initialRate; // 初期値を返す
-        }
 
-        return rateData.ayacoin;
+            // データが存在しない場合は初期値を作成
+            if (!rateData) {
+                const initialRate = 15000; // 初期値を100倍で保存 (例: 150.00 -> 15000)
+                await prisma.Bot.create({
+                    data: { id: "singleton", ayacoin: initialRate },
+                });
+                return initialRate;
+            }
+
+            return rateData.ayacoin;
+        } catch (error) {
+            // Prisma がテーブルを見つけられない場合(P2021)、テーブルを作成して再試行する
+            if (error && error.code === 'P2021') {
+                console.warn('Bot テーブルが見つかりませんでした。テーブルを作成して再試行します...');
+                // テーブルを現在のスキーマに作成する（存在しない場合のみ）
+                await prisma.$executeRawUnsafe(`
+                    CREATE TABLE IF NOT EXISTS "Bot" (
+                        "id" TEXT PRIMARY KEY,
+                        "ayacoin" INTEGER DEFAULT 5000,
+                        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    );
+                `);
+
+                // 再度取得 -> テーブル作成後はレコードが無ければ作成するロジックにより初期値が作られる
+                const rateData = await prisma.Bot.findUnique({ where: { id: 'singleton' } });
+                if (!rateData) {
+                    const initialRate = 15000;
+                    await prisma.Bot.create({ data: { id: 'singleton', ayacoin: initialRate } });
+                    return initialRate;
+                }
+                return rateData.ayacoin;
+            }
+
+            // それ以外のエラーは再スロー
+            throw error;
+        }
     }
 
     // データベースのレートを更新
@@ -79,7 +105,6 @@ class ExchangeSimulator {
             data: { ayacoin: expandedRate },
         });
 
-        console.log(`Updated rate to: ${expandedRate} (stored as integer)`);
     }
 
     // レート計算と更新処理
@@ -105,7 +130,6 @@ class ExchangeSimulator {
             newRate = this.priceFloor;
         }
 
-        console.log(`Current rate: ${currentRateInDecimal.toFixed(2)}, Change: ${(randomChange * 100).toFixed(4)}%, Upward bias: ${upwardBias.toFixed(4)}`);
         await this.updateRate(newRate);
     }
 
@@ -114,7 +138,6 @@ class ExchangeSimulator {
         if (this.isRunning) return;
 
         this.isRunning = true;
-        console.log("Starting simulation...");
 
         const simulate = async () => {
             if (!this.isRunning) {
