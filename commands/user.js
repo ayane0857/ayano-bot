@@ -12,23 +12,45 @@ module.exports = {
         try {
             if (!interaction.guildId) return;
 
-            const member = interaction.options.getMember('user') || interaction.member;
-            console.log(member);
-            // const user = await message.client.users.fetch(id);
+            // オプションから User を取得（指定がなければ実行者）
+            const user = interaction.options.getUser('user') || interaction.user;
+
+            // キャッシュにある GuildMember を取得（なければ null）
+            let member = interaction.options.getMember('user');
+
+            // member が null の場合、API から取得を試みる（ギルドにいるがキャッシュされていない場合）
+            if (!member) {
+                try {
+                    member = await interaction.guild.members.fetch(user.id);
+                } catch (err) {
+                    // ギルドにいない、または取得失敗した場合は null のままにする
+                    member = null;
+                }
+            }
+
+            const displayName = member?.nickname ?? user.username;
+            const avatarUrl = (user.displayAvatarURL && typeof user.displayAvatarURL === 'function')
+                ? user.displayAvatarURL({ dynamic: true })
+                : null;
+
+            const fields = [
+                { name: '名前', value: `${displayName} (${user.tag ?? user.username})` },
+                { name: 'ID', value: user.id },
+                { name: 'サーバーに入会日', value: member ? member.joinedAt.toLocaleString() : 'サーバーメンバーではありません' },
+                { name: 'アカウント作成日', value: user.createdAt ? user.createdAt.toLocaleString() : '不明' }
+            ];
+
             const embed = new EmbedBuilder()
                 .setColor('#0099ff')
-                .setTitle(`${member.nickname} の情報`)
-                .setThumbnail(member.user.displayAvatarURL())
-                .addFields(
-                    { name: '名前', value: `${member.nickname}(${member.user.username})` },
-                    { name: 'サーバーに入会日', value: member.joinedAt.toLocaleString() },
-                    { name: 'アカウント作成日', value: member.user.createdAt.toLocaleString() }
-                )
+                .setTitle(`${displayName} の情報`)
+                .setThumbnail(avatarUrl)
+                .addFields(fields)
                 .setTimestamp();
 
             await interaction.reply({ embeds: [embed] });
         } catch (e) {
-            throw e
+            console.error(e);
+            await interaction.reply({ content: 'ユーザー情報の取得中にエラーが発生しました。', ephemeral: true });
         }
     },
 };
