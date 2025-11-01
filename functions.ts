@@ -1,7 +1,43 @@
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
-async function addXP(serverId, userId, amount) {
+interface UserServer {
+    serverId: string;
+    userId: string;
+    xp: number;
+    coin: number;
+    bankcoin: number;
+    ayacoin: number;
+}
+
+interface ServerUserIdentifier {
+    serverId: string;
+    userId: string;
+}
+
+interface UserData {
+    coin: number;
+    bankcoin: number;
+}
+
+interface LevelReturnData {
+    userId: string;
+    xp: number;
+    coin?: number;
+    bankcoin?: number;
+}
+
+interface LevelCalculationResult {
+    level: number;
+    NextXP: number;
+}
+
+interface YakuResult {
+    yaku: "ピンゾロ" | "ゾロ目" | "シゴロ" | "ヒフミ" | "普通の目" | "役なし";
+    coin: number;
+}
+
+async function addXP(serverId: ServerUserIdentifier, userId: ServerUserIdentifier, amount: number): Promise<UserServer> {
     try {
         const userData = await prisma.userServer.upsert({
             where: {
@@ -32,7 +68,7 @@ async function addXP(serverId, userId, amount) {
     }
 }
 
-async function addCoin(serverId, userId, amount) {
+async function addCoin(serverId: ServerUserIdentifier, userId: ServerUserIdentifier, amount: number): Promise<UserServer> {
     try {
         const userData = await prisma.userServer.upsert({
             where: {
@@ -63,7 +99,7 @@ async function addCoin(serverId, userId, amount) {
     }
 }
 
-async function addBank(serverId, userId, amount) {
+async function addBank(serverId: ServerUserIdentifier, userId:ServerUserIdentifier, amount:number): Promise<UserServer> {
     try {
         const userData = await prisma.userServer.upsert({
             where: {
@@ -94,7 +130,7 @@ async function addBank(serverId, userId, amount) {
     }
 }
 
-async function addAyaCoin(serverId, userId, amount) {
+async function addAyaCoin(serverId:ServerUserIdentifier, userId:ServerUserIdentifier, amount:number): Promise<UserServer> {
     try {
         const userData = await prisma.userServer.upsert({
             where: {
@@ -125,7 +161,7 @@ async function addAyaCoin(serverId, userId, amount) {
     }
 }
 
-async function getUserData(serverId, userId) {
+async function getUserData(serverId:ServerUserIdentifier, userId:ServerUserIdentifier): Promise<UserServer> {
     try {
         const userData = await prisma.userServer.findUnique({
             where: {
@@ -157,7 +193,7 @@ async function getUserData(serverId, userId) {
     }
 }
 
-async function deleteUserServerData(serverId, userId) {
+async function deleteUserServerData(serverId:ServerUserIdentifier, userId:ServerUserIdentifier): Promise<boolean> {
     try {
         await prisma.userServer.delete({
             where: {
@@ -177,7 +213,7 @@ async function deleteUserServerData(serverId, userId) {
     }
 }
 
-function levenextxp(xp) {
+function levenextxp(xp: number): LevelCalculationResult {
     try {
         let level = 0;
         let requiredXp = 250;
@@ -199,7 +235,7 @@ function levenextxp(xp) {
     }
 }
 
-async function getTopUsersByCoin(serverId) {
+async function getTopUsersByCoin(serverId:ServerUserIdentifier): Promise<LevelReturnData[]> {
     try {
         const users = await prisma.userServer.findMany({
             where: {
@@ -214,7 +250,7 @@ async function getTopUsersByCoin(serverId) {
 
         // 合計値でソートして上位5件を取得
         const topUsers = users
-            .sort((a, b) => (b.coin + b.bankcoin) - (a.coin + a.bankcoin))
+            .sort((a: UserData, b:UserData) => (b.coin + b.bankcoin) - (a.coin + a.bankcoin))
             .slice(0, 5);
 
         return topUsers
@@ -225,7 +261,7 @@ async function getTopUsersByCoin(serverId) {
     }
 }
 
-async function getTopUsersByXP(serverId) {
+async function getTopUsersByXP(serverId:ServerUserIdentifier): Promise<LevelReturnData[]> {
     try {
         const users = await prisma.userServer.findMany({
             where: { serverId: serverId },
@@ -242,7 +278,7 @@ async function getTopUsersByXP(serverId) {
     }
 }
 
-function getYaku(dice, coin) {
+function getYaku(dice: number[], coin: number): YakuResult {
     try {
         if (dice[0] === 1 && dice[1] === 1 && dice[2] === 1) {
             return {

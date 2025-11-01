@@ -31,7 +31,7 @@ try {
 client.commands = new Collection();
 
 const commandsPath = path.join(__dirname, 'commands');
-const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+const commandFiles = fs.readdirSync(commandsPath).filter((file: string) => file.endsWith('.js'));
 
 for (const file of commandFiles) {
     const filePath = path.join(commandsPath, file);
@@ -64,9 +64,9 @@ while (dirsToProcess.length > 0) {
             const target = filePath.includes('interactions') ? client : client;
 
             if (event.once) {
-                target.once(event.name, (...args) => event.execute(...args));
+                target.once(event.name, (...args: unknown[]) => event.execute(...args));
             } else {
-                target.on(event.name, (...args) => event.execute(...args));
+                target.on(event.name, (...args: unknown[]) => event.execute(...args));
             }
         }
     }

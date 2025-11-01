@@ -1,12 +1,19 @@
-const { REST, Routes } = require('discord.js');
-require('dotenv').config();
-const { CLIEN_ID, DISCORD_TOKEN } = process.env;
-const fs = require('node:fs');
-const path = require('node:path');
+import { REST, Routes } from 'discord.js';
+import dotenv from 'dotenv';
+import fs from 'node:fs';
+import path from 'node:path';
 
-const commands = [];
+dotenv.config();
+const CLIEN_ID = process.env.CLIEN_ID;
+const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
+
+if (!CLIEN_ID || !DISCORD_TOKEN) {
+    throw new Error('Required environment variables are not set');
+}
+
+const commands: any[] = [];
 const commandsPath = path.join(__dirname, 'commands');
-const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+const commandFiles = fs.readdirSync(commandsPath).filter((file: string) => file.endsWith('.js'));
 
 for (const file of commandFiles) {
     const filePath = path.join(commandsPath, file);
@@ -27,7 +34,7 @@ const rest = new REST().setToken(DISCORD_TOKEN);
         const data = await rest.put(
             Routes.applicationCommands(CLIEN_ID),
             { body: commands },
-        );
+        ) as { length: number };
 
         console.log(`${data.length} 個のコマンドを登録しました。`);
     } catch (error) {
